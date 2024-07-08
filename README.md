@@ -10,10 +10,10 @@ tba
 
 tba
 
-'''bash
-'''
+```bash
+```
 
-'''python
+```python
 #print("This is a check")
 
-'''
+```
