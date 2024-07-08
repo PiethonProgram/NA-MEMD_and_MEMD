@@ -9,3 +9,11 @@ tba
 ## Functions and Usage
 
 tba
+
+'''bash
+'''
+
+'''python
+#print("This is a check")
+
+'''
