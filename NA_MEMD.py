@@ -1,5 +1,3 @@
-import numpy as np
-import pandas as pd
 from noise import *
 
 
@@ -9,4 +7,8 @@ def na_memd(signals):
     sample_count = signals.shape[1]
     for i in range(channel_count):
 
-        signals[i] = add_noise(signals)
+        signals[i] = add_noise(signals, method='na_var')
+
+
+if __name__ == "__main__":
+    pass

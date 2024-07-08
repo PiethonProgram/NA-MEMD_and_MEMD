@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+
 
 def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
     # available methods : na_fix, na_snr, na_var, na_ran
@@ -12,16 +12,25 @@ def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
 
     noise = np.random.randn(add_rchannel, sample_count)
 
-    print(signal.shape,noise.shape)
-
     if method == 'na_fix':
-        pass
+        fix_noise = noise * intensity
+        output = np.vstack((signal, fix_noise))
+        return output
 
     elif method == 'na_snr':
         pass
+
     elif method == 'na_var':
-        pass
+        var_noise = np.var(a=signal, axis=1, keepdims=True) * intensity
+        var_noise = noise * var_noise
+        output = np.vstack((signal, var_noise))
+        return output
+
     elif method == 'na_ran':
         pass
+
     else:
-        raise ValueError('Invalid method. \n Available methods: na_fix, na_snr, na_var, na_ran')
+        raise ValueError('\nInvalid method. \n'
+                         'Available methods: na_fix, na_snr, na_var, na_ran')
+
+    raise ValueError('Error, Review Input')
