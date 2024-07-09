@@ -9,6 +9,7 @@ def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
     - signal (ndarray): signal input consisting of r rows and c columns where each row represents an input channel
                         and each column represents sample data.
     - method (str) : method of noise to apply to signal.
+        memd : memd implementation
         na_fix : fixed noise
         na_snr : signal-to-noise ratio
         na_var : variance based noise
@@ -27,7 +28,10 @@ def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
 
     noise = np.random.randn(add_rchannel, sample_count)
 
-    if method == 'na_fix':
+    if method == 'memd':
+        return signal
+
+    elif method == 'na_fix':
         fix_noise = noise * intensity
         output = np.vstack((signal, fix_noise))
         return output
