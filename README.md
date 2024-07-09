@@ -8,7 +8,8 @@ Offers additional options for noise generation, and allows for n-dimensional NA-
 
 
 ## Dependencies 
-- NumPy  
+- NumPy
+- SciPy  
 - to be updated  
 
 ```bash
