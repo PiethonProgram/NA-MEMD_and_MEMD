@@ -10,13 +10,13 @@ def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
     - signal (ndarray): signal input consisting of r rows and c columns where each row represents an input channel
                         and each column represents sample data.
     - method (str) : method of noise to apply to signal.
-        memd : memd implementation
+        memd : memd implementation (do nothing)
         na_fix : fixed noise
         na_snr : signal-to-noise ratio
         na_var : variance based noise
         na_ran : random noise
     - intensity (float) : intensity of noise (if using na_snr then intensity becomes desired SNR ratio)
-    - add_rchannel (int) : number of noise channels to add to signals (default set to number of input channels)
+    - add_rchannel (int) : number of noise channels to add to signals (default set equal to number of input channels)
 
     Output :
     returns ndarray consisting of c + add_rchannel channels of length r
