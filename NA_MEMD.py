@@ -1,5 +1,4 @@
-from noise import *
-
+from noise import add_noise
 
 
 def na_memd(signals,n_proj=50,stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2,
