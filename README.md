@@ -6,7 +6,8 @@ Python implementation of Noise-Assisted Multivariate Empirical Mode Decompositio
 
 ## Installation and Dependencies
 Below are the necessary packages/libraries to run NA-MEMD and associated code.
--NumPy
+-NumPy  
+-
 ```bash
 pip install numpy
 ```
@@ -21,5 +22,5 @@ tba
 
 ```python
 #print("This is a check")
-
+#print("update 2")
 ```
