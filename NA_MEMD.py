@@ -11,6 +11,7 @@ def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), 
     return imfs
 
 
+@jit(nopython=True)
 def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_iter=2, n_imf=100):
     seq, t, nbit, MAXITERATIONS, N_dim, N = initialize_parameters(signal, n_dir)
     sd, sd2, tol = stop_vec
@@ -57,6 +58,8 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
     q = np.asarray(q)
     return q
 
+
+@jit(nopython=True)
 def initialize_parameters(signal, n_dir):
     N_dim = signal.shape[0]  # Number of channels
     N = signal.shape[1]  # Number of data points
@@ -75,7 +78,7 @@ def initialize_parameters(signal, n_dir):
 
     t = np.arange(1, N + 1)
     nbit = 0
-    MAXITERATIONS = 1000
+    MAXITERATIONS = 10000
 
     return seq, t, nbit, MAXITERATIONS, N_dim, N
 

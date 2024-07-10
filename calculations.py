@@ -2,8 +2,10 @@
 import numpy as np
 from scipy.interpolate import interp1d, CubicSpline
 import sys
+from numba import jit
 
 
+@jit(nopython=True)
 def hamm(n_dir, base):
     seq = np.zeros(n_dir)
     if base > 1:
@@ -35,6 +37,7 @@ def small_primes(nth):      # corner cases for nth prime estimation using log
     return list_prime[:nth]
 
 
+@jit(nopython=True)
 def large_primes(nth):
     # https://stackoverflow.com/questions/2068372/fastest-way-to-list-all-primes-below-n/3035188#3035188
     lim = int(nth * (np.log(nth) + np.log(np.log(nth)))) + 1
@@ -77,6 +80,7 @@ def local_peaks(x):
     return indmin, indmax
 
 
+@jit(nopython=True)
 def stop_emd(r, seq, ndir, N_dim):
     ner = np.zeros(ndir)
     dir_vec = np.zeros(N_dim)
@@ -174,6 +178,7 @@ def fix(m, t, seq, ndir, stp_cnt, counter, N, N_dim):
     return stp, env_mean, counter
 
 
+@jit(nopython=True)
 def envelope_mean(m, t, seq, ndir, N, N_dim):
     NBSYM = 2
     count = 0
