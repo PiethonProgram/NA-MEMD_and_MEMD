@@ -18,7 +18,7 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
     q = []
 
     while not stop_emd(signal, seq, n_dir, N_dim):
-        m = signal
+        m = signal.copy()
 
         # Compute mean and stopping criterion
         counter = 0
@@ -35,7 +35,7 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
         # Sifting loop
         while not stop_sift and nbit < MAXITERATIONS:
             # Sifting
-            m -= env_mean
+            m = m - env_mean.T  # Transpose env_mean to match the shape of m
 
             # Compute mean and stopping criterion
             if stop_crit == 'stop':
@@ -49,14 +49,13 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
                 print('Forced stop of sifting: too many iterations')
 
         q.append(m.T)
-        signal -= m
+        signal = signal - m
         nbit = 0
 
     # Store the residue
     q.append(signal.T)
     q = np.asarray(q)
     return q
-
 
 def initialize_parameters(signal, n_dir):
     N_dim = signal.shape[0]  # Number of channels
