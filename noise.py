@@ -22,7 +22,6 @@ def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
     returns ndarray consisting of c + add_rchannel channels of length r
     """
 
-
     channel_count, sample_count = signal.shape
 
     if add_rchannel is None:

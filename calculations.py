@@ -2,10 +2,10 @@
 import numpy as np
 from scipy.interpolate import interp1d, CubicSpline
 import sys
+import warnings
 from numba import jit
 
 
-@jit(nopython=True)
 def hamm(n_dir, base):
     seq = np.zeros(n_dir)
     if base > 1:
@@ -37,7 +37,6 @@ def small_primes(nth):      # corner cases for nth prime estimation using log
     return list_prime[:nth]
 
 
-@jit(nopython=True)
 def large_primes(nth):
     # https://stackoverflow.com/questions/2068372/fastest-way-to-list-all-primes-below-n/3035188#3035188
     lim = int(nth * (np.log(nth) + np.log(np.log(nth)))) + 1
@@ -80,7 +79,6 @@ def local_peaks(x):
     return indmin, indmax
 
 
-@jit(nopython=True)
 def stop_emd(r, seq, ndir, N_dim):
     ner = np.zeros(ndir)
     dir_vec = np.zeros(N_dim)
@@ -123,7 +121,7 @@ def stop_emd(r, seq, ndir, N_dim):
 
 
 def zero_crossings(x):
-    indzer = np.where(x[:-1] * x[1:] < 0)[0]
+    indzer = np.where(x[0:-1] * x[1:] < 0)[0]
 
     if np.any(x == 0):
         iz = np.where(x == 0)[0]
@@ -132,7 +130,7 @@ def zero_crossings(x):
             dz = np.diff(np.concatenate(([0], zer, [0])))
             debz = np.where(dz == 1)[0]
             finz = np.where(dz == -1)[0] - 1
-            indz = np.round((debz + finz) / 2).astype(int)
+            indz = np.round((debz + finz) / 2)
         else:
             indz = iz
         indzer = np.sort(np.concatenate((indzer, indz)))
@@ -145,7 +143,10 @@ def stop(m, t, sd, sd2, tol, seq, ndir, N, N_dim):
         env_mean, nem, nzm, amp = envelope_mean(m, t, seq, ndir, N, N_dim)
         sx = np.sqrt(np.sum(np.power(env_mean, 2), axis=1))
 
-        if np.any(amp):
+        # if np.any(amp):
+        #     sx = sx / amp
+
+        if all(amp):  # something is wrong here
             sx = sx / amp
 
         if np.mean(sx > sd) <= tol and not np.any(sx > sd2) and np.any(nem > 2):
@@ -158,7 +159,6 @@ def stop(m, t, sd, sd2, tol, seq, ndir, N, N_dim):
         stp = 1
 
     return stp, env_mean
-
 
 def fix(m, t, seq, ndir, stp_cnt, counter, N, N_dim):
     try:
@@ -178,7 +178,6 @@ def fix(m, t, seq, ndir, stp_cnt, counter, N, N_dim):
     return stp, env_mean, counter
 
 
-@jit(nopython=True)
 def envelope_mean(m, t, seq, ndir, N, N_dim):
     NBSYM = 2
     count = 0
@@ -191,7 +190,7 @@ def envelope_mean(m, t, seq, ndir, N, N_dim):
 
     dir_vec = np.zeros((N_dim, 1))
 
-    for it in range(ndir):
+    for it in range(0,ndir):
         if N_dim != 3:  # Multivariate signal (for N_dim != 3) with Hammersley sequence
             # Linear normalization of Hammersley sequence in the range of -1.00 to 1.00
             b = 2 * seq[it, :] - 1
@@ -248,6 +247,7 @@ def envelope_mean(m, t, seq, ndir, N, N_dim):
         nem = np.zeros((ndir))
 
     return env_mean, nem, nzm, amp
+
 
 def boundary_conditions(indmin, indmax, t, x, z, nbsym):
     lx = len(x) - 1

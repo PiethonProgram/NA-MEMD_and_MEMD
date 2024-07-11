@@ -11,15 +11,16 @@ def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), 
     return imfs
 
 
-@jit(nopython=True)
 def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_iter=2, n_imf=100):
     seq, t, nbit, MAXITERATIONS, N_dim, N = initialize_parameters(signal, n_dir)
     sd, sd2, tol = stop_vec
 
     q = []
 
+
     while not stop_emd(signal, seq, n_dir, N_dim):
-        m = signal.copy()
+        print("working")
+        m = signal
 
         # Compute mean and stopping criterion
         counter = 0
@@ -35,6 +36,7 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
 
         # Sifting loop
         while not stop_sift and nbit < MAXITERATIONS:
+            print("iter")
             # Sifting
             m = m - env_mean.T  # Transpose env_mean to match the shape of m
 
@@ -47,7 +49,8 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
             nbit += 1
 
             if nbit == (MAXITERATIONS - 1) and nbit > 100:
-                print('Forced stop of sifting: too many iterations')
+                print(nbit, MAXITERATIONS)
+                warnings.warn('Forced stop of sifting: too many iterations', UserWarning)
 
         q.append(m.T)
         signal = signal - m
@@ -59,26 +62,24 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
     return q
 
 
-@jit(nopython=True)
 def initialize_parameters(signal, n_dir):
     N_dim = signal.shape[0]  # Number of channels
     N = signal.shape[1]  # Number of data points
 
-    base = [-n_dir]
+    base = np.full(N_dim, -n_dir, dtype=np.int64)
     if N_dim == 3:
-        base.append(2)
+        base[1] = 2
     else:
         prm = nth_prime(N_dim - 1)
-        for i in range(1, N_dim):
-            base.append(prm[i - 1])
+        base[1:] = prm[:N_dim-1]
 
     seq = np.zeros((n_dir, N_dim))
-    for i in range(len(base)):
+    for i in range(N_dim):
         seq[:, i] = hamm(n_dir, base[i])
 
     t = np.arange(1, N + 1)
     nbit = 0
-    MAXITERATIONS = 10000
+    MAXITERATIONS = 20000  # Increased the maximum number of iterations
 
     return seq, t, nbit, MAXITERATIONS, N_dim, N
 
