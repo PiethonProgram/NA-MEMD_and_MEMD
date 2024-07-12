@@ -1,6 +1,6 @@
 from noise import *
 # from calculations import *
-from calculations_orig import *
+from calculations import *
 
 def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2, n_imf=None,
             method='memd', intensity=0.1, add_rchannel=None):

@@ -94,35 +94,6 @@ def local_peaks(x):
 
     return (indmin, indmax)
 
-# def local_peaks(x):
-#     if np.all(x < 1e-5):
-#         return np.array([]), np.array([])
-#
-#     dy = np.diff(x)
-#     a = np.where(dy != 0)[0]
-#     if len(a) == 0:
-#         return np.array([]), np.array([])
-#
-#     lm = np.where(np.diff(a) != 1)[0] + 1
-#     d = a[lm] - a[lm - 1]
-#     a[lm] = a[lm] - d // 2
-#     a = np.append(a, len(x) - 1)
-#     ya = x[a]
-#
-#     if len(ya) <= 1:
-#         return np.array([]), np.array([])
-#
-#     dya = np.diff(ya)
-#     sign_change = np.sign(dya)
-#
-#     loc_max = np.where((sign_change[:-1] > 0) & (sign_change[1:] < 0))[0] + 1
-#     loc_min = np.where((sign_change[:-1] < 0) & (sign_change[1:] > 0))[0] + 1
-#
-#     indmax = a[loc_max] if len(loc_max) > 0 else np.array([])
-#     indmin = a[loc_min] if len(loc_min) > 0 else np.array([])
-#
-#     return indmin, indmax
-
 
 def stop_emd(r, seq, ndir, N_dim):
     ner = np.zeros(ndir)
