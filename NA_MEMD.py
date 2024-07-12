@@ -1,6 +1,6 @@
 from noise import *
-from calculations import *
-
+# from calculations import *
+from calculations_orig import *
 
 def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2, n_imf=None,
             method='memd', intensity=0.1, add_rchannel=None):
@@ -12,6 +12,10 @@ def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), 
 
 
 def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_iter=2, n_imf=100):
+
+    # if np.shape(signal)[0] < np.shape(signal)[1]:
+    #     signal = signal.T
+
     seq, t, nbit, MAXITERATIONS, N_dim, N = initialize_parameters(signal, n_dir)
     sd, sd2, tol = stop_vec
 

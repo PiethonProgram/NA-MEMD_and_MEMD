@@ -1,4 +1,3 @@
-# Hammersley a prime calculations
 import numpy as np
 from scipy.interpolate import interp1d, CubicSpline
 import sys
@@ -48,35 +47,81 @@ def large_primes(nth):
             sieve[k * (k - 2 * (i & 1) + 4) // 3::2 * k] = False
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
+def peaks(X):
+    dX = np.sign(np.diff(X.transpose())).transpose()
+    locs_max = np.where(np.logical_and(dX[:-1] > 0, dX[1:] < 0))[0] + 1
+    pks_max = X[locs_max]
+
+    return (pks_max, locs_max)
+
+
+# =============================================================================
 
 def local_peaks(x):
-    if np.all(x < 1e-5):
-        return np.array([]), np.array([])
+    if all(x < 1e-5):
+        x = np.zeros((1, len(x)))
 
-    dy = np.diff(x)
+    m = len(x) - 1
+
+    # Calculates the extrema of the projected signal
+    # Difference between subsequent elements:
+    dy = np.diff(x.transpose()).transpose()
     a = np.where(dy != 0)[0]
-    if len(a) == 0:
-        return np.array([]), np.array([])
-
     lm = np.where(np.diff(a) != 1)[0] + 1
     d = a[lm] - a[lm - 1]
-    a[lm] = a[lm] - d // 2
-    a = np.append(a, len(x) - 1)
+    a[lm] = a[lm] - np.floor(d / 2)
+    a = np.insert(a, len(a), m)
     ya = x[a]
 
-    if len(ya) <= 1:
-        return np.array([]), np.array([])
+    if len(ya) > 1:
+        # Maxima
+        pks_max, loc_max = peaks(ya)
+        # Minima
+        pks_min, loc_min = peaks(-ya)
 
-    dya = np.diff(ya)
-    sign_change = np.sign(dya)
+        if len(pks_min) > 0:
+            indmin = a[loc_min]
+        else:
+            indmin = np.asarray([])
 
-    loc_max = np.where((sign_change[:-1] > 0) & (sign_change[1:] < 0))[0] + 1
-    loc_min = np.where((sign_change[:-1] < 0) & (sign_change[1:] > 0))[0] + 1
+        if len(pks_max) > 0:
+            indmax = a[loc_max]
+        else:
+            indmax = np.asarray([])
+    else:
+        indmin = np.array([])
+        indmax = np.array([])
 
-    indmax = a[loc_max] if len(loc_max) > 0 else np.array([])
-    indmin = a[loc_min] if len(loc_min) > 0 else np.array([])
+    return (indmin, indmax)
 
-    return indmin, indmax
+# def local_peaks(x):
+#     if np.all(x < 1e-5):
+#         return np.array([]), np.array([])
+#
+#     dy = np.diff(x)
+#     a = np.where(dy != 0)[0]
+#     if len(a) == 0:
+#         return np.array([]), np.array([])
+#
+#     lm = np.where(np.diff(a) != 1)[0] + 1
+#     d = a[lm] - a[lm - 1]
+#     a[lm] = a[lm] - d // 2
+#     a = np.append(a, len(x) - 1)
+#     ya = x[a]
+#
+#     if len(ya) <= 1:
+#         return np.array([]), np.array([])
+#
+#     dya = np.diff(ya)
+#     sign_change = np.sign(dya)
+#
+#     loc_max = np.where((sign_change[:-1] > 0) & (sign_change[1:] < 0))[0] + 1
+#     loc_min = np.where((sign_change[:-1] < 0) & (sign_change[1:] > 0))[0] + 1
+#
+#     indmax = a[loc_max] if len(loc_max) > 0 else np.array([])
+#     indmin = a[loc_min] if len(loc_min) > 0 else np.array([])
+#
+#     return indmin, indmax
 
 
 def stop_emd(r, seq, ndir, N_dim):
