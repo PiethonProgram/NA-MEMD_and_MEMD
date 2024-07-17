@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import interp1d, CubicSpline
 from math import pi, sqrt, sin, cos
 import sys
 
