@@ -10,10 +10,11 @@ Offers additional options for noise generation, and allows for n-dimensional NA-
 ## Dependencies 
 - NumPy
 - SciPy  
-- to be updated  
+- sys
+- math
 
 ```bash
-pip install numpy 
+pip install numpy, sys, SciPy, math
 ```
 
 
