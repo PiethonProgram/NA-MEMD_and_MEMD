@@ -22,9 +22,9 @@ pip install numpy, sys, SciPy, math
 to be updated
 ```python
 signal = np.random.randn(5, 1000)
-memd_imfs = na_memd(signal)
-na_memd_imfs = (signal, method="na_fix")
-
+memd_imfs = na_memd(signal)  # traditional memd signal processing
+na_memd_imfs = na_memd(signal, method="na_fix")  # na_memd processing with noise assistance
+add_noise = add_noise(signal, method = "na_fix")  # add noise only to signal without EMD processing
 ```
 
 
