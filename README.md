@@ -1,7 +1,7 @@
 # NA-MEMD for Python
 
 
-## Introdction
+## Introduction
 Python implementation of Noise-Assisted Multivariate Empirical Mode Decomposition (NA-MEMD). Includes functions for noise generation, multivariate empirical mode breakdown (MEMD).  
   
 Offers additional options for noise generation, and allows for n-dimensional NA-MEMD as opposed to the previous bivariate option [1].
@@ -21,8 +21,10 @@ pip install numpy, sys, SciPy, math
 ## Functions and Usage  
 to be updated
 ```python
-#print("This is a check")
-#print("update 2")
+signal = np.random.randn(5, 1000)
+memd_imfs = na_memd(signal)
+na_memd_imfs = (signal, method="na_fix")
+
 ```
 
 
