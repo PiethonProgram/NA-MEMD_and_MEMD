@@ -19,25 +19,30 @@ def hamm(n, base):
         temp = np.arange(1, n + 1)
         seq = (np.remainder(temp, (-base + 1)) + 0.5) / (-base)
 
-    return (seq)
+    return seq
 
 
 def zero_crossings(x):
-    indzer = np.where(x[:-1] * x[1:] < 0)[0]
+    izc_detect = np.where(x[:-1] * x[1:] < 0)[0]    # zero-crossing detection
 
-    if np.any(x == 0):
-        iz = np.where(x == 0)[0]
-        if np.any(np.diff(iz) == 1):
-            zer = (x == 0).astype(int)
-            dz = np.diff(np.concatenate(([0], zer, [0])))
-            debz = np.where(dz == 1)[0]
-            finz = np.where(dz == -1)[0] - 1
-            indz = np.round((debz + finz) / 2).astype(int)
+    if len(izc_detect) == 0:  # early exit if no zero-crossings found
+        return izc_detect
+
+    exact_zeros = np.where(x == 0)[0]   # find and store exact zeros
+    if len(exact_zeros) > 0:        # Check for consecutive zeros
+        if np.any(np.diff(exact_zeros) == 1):   # consecutive zeros
+            zero_array = (x == 0).astype(int)
+            diff = np.diff(np.concatenate(([0], zero_array, [0])))
+            start_block = np.where(diff == 1)[0]
+            end_block = np.where(diff == -1)[0] - 1
+            midpts = np.round((start_block + end_block) / 2).astype(int)
+
         else:
-            indz = iz
-        indzer = np.sort(np.concatenate((indzer, indz)))
+            midpts = exact_zeros    # non-consecutive zeros
 
-    return indzer
+        izc_detect = np.unique(np.concatenate((izc_detect, midpts)))    # midpoint + zc-index
+
+    return izc_detect
 
 
 # defines new extrema points to extend the interpolations at the edges of the

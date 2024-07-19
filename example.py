@@ -1,11 +1,11 @@
 from NA_MEMD import *
 import time
-import mne
 
 
-signal = np.random.randn(10, 1600)
+np.random.seed(15)
+signal = np.random.randn(3, 1000)
 st = time.time()
-imfs = na_memd(signal=signal)
+imfs = na_memd(signal=signal, method="na_fix")
 en = time.time()
 net = en-st
 print("time taken : ", net)

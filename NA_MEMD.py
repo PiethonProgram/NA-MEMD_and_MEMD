@@ -61,7 +61,7 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
             stop_sift, env_mean, counter = fix(m, t, seq, n_dir, stp_cnt, counter, N, N_dim)
         if np.max(np.abs(m)) < 1e-10 * np.max(np.abs(signal)):
             if not stop_sift:
-                warnings.warn('emd:warning', 'forced stop of EMD : too small amplitude')
+                print('emd:warning : forced stop of EMD : too small amplitude')
             else:
                 print('forced stop of EMD : too small amplitude')
             break
@@ -73,7 +73,7 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
                 stop_sift, env_mean, counter = fix(m, t, seq, n_dir, stp_cnt, counter, N, N_dim)
             nbit += 1
             if nbit == (MAXITERATIONS - 1) and nbit > 100:
-                warnings.warn('emd:warning', 'forced stop of sifting : too many iterations')
+                print('emd:warning : forced stop of sifting : too many iterations')
         imfs.append(m.T)
         n_imf += 1
         r = r - m
