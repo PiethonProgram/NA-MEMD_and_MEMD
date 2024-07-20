@@ -2,27 +2,96 @@ import numpy as np
 from scipy.interpolate import interp1d, CubicSpline
 from math import pi, sqrt, sin, cos
 import sys
+from numba import jit
 
 
-def hamm(n, base):
-    seq = np.zeros((1, n))
-
-    if 1 < base:
-        seed = np.arange(1, n + 1)
-        base_inv = 1 / base
-        while any(x != 0 for x in seed):
-            digit = np.remainder(seed[0:n], base)
-            seq = seq + digit * base_inv
-            base_inv = base_inv / base
-            seed = np.floor(seed / base)
+def nth_prime(nth):  # Calculate and return the first nth primes.
+    if nth > 0:
+        if nth <= 5:    # call corner cases
+            return small_primes(nth)
+        else:
+            return large_primes(nth)    # call general cases
     else:
+        raise ValueError("n must be >= 1 for list of n prime numbers")
+
+
+def small_primes(nth):      # corner cases for nth prime estimation using log
+    list_prime = np.array([2, 3, 5, 7, 11])
+    return list_prime[:nth]
+
+
+def large_primes(nth):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # https://stackoverflow.com/questions/2068372/fastest-way-to-list-all-primes-below-n/3035188#3035188
+    lim = int(nth * (np.log(nth) + np.log(np.log(nth)))) + 1
+    sieve = np.ones(lim // 3 + (lim % 6 == 2), dtype=bool)
+    for i in range(1, int(lim ** 0.5) // 3 + 1):
+        if sieve[i]:
+            k = 3 * i + 1 | 1
+            sieve[k * k // 3::2 * k] = False
+            sieve[k * (k - 2 * (i & 1) + 4) // 3::2 * k] = False
+    return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
+
+
+def hamm(n, base):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    sequence = np.zeros(n)
+
+    if base > 1:    # generate initial seed and calculate inverse
+        seed = np.arange(1, n + 1)
+        invert_base = 1 / base
+
+        while np.any(seed != 0):    # loop till all elements == 0
+            digit = np.remainder(seed, base)
+            sequence += digit * invert_base
+            invert_base /= base
+            seed = np.floor(seed / base)
+
+    else:   # generate temporary array and calculate sequence for base values <= 1
         temp = np.arange(1, n + 1)
-        seq = (np.remainder(temp, (-base + 1)) + 0.5) / (-base)
+        sequence = (np.remainder(temp, (-base + 1)) + 0.5) / (-base)
 
-    return seq
+    return sequence
 
 
-def zero_crossings(x):
+# Stopping criterion
+def stop(m, t, sd, sd2, tol, seq, ndir, N, N_dim):
+    try:
+        env_mean, nem, nzm, amp = envelope_mean(m, t, seq, ndir, N, N_dim)
+        sx = np.sqrt(np.sum(env_mean ** 2, axis=1))
+
+        if np.all(amp):  # Check if all elements of amp are non-zero
+            sx /= amp  # Element-wise division
+
+        mean_sx_gt_sd = np.mean(sx > sd)
+        any_sx_gt_sd2 = np.any(sx > sd2)
+        any_nem_gt_2 = np.any(nem > 2)
+
+        stp = not ((mean_sx_gt_sd > tol or any_sx_gt_sd2) and any_nem_gt_2)
+    except:
+        env_mean = np.zeros((N, N_dim))
+        stp = 1
+
+    return stp, env_mean
+
+
+def fix(m, t, seq, ndir, stp_cnt, counter, N, N_dim):
+    try:
+        env_mean, nem, nzm, amp = envelope_mean(m, t, seq, ndir, N, N_dim)
+
+        # Use numpy operations for vectorized comparison
+        if np.all(np.abs(nzm - nem) > 1):
+            stp = 0
+            counter = 0
+        else:
+            counter += 1
+            stp = counter >= stp_cnt
+    except:
+        env_mean = np.zeros((N, N_dim))
+        stp = 1
+
+    return stp, env_mean, counter
+
+
+def zero_crossings(x):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     izc_detect = np.where(x[:-1] * x[1:] < 0)[0]    # zero-crossing detection
 
     if len(izc_detect) == 0:  # early exit if no zero-crossings found
@@ -45,8 +114,53 @@ def zero_crossings(x):
     return izc_detect
 
 
-# defines new extrema points to extend the interpolations at the edges of the
-# signal (mainly mirror symmetry)
+def peaks(X):
+    dX = np.sign(np.diff(X.transpose())).transpose()
+    locs_max = np.where(np.logical_and(dX[:-1] > 0, dX[1:] < 0))[0] + 1
+    pks_max = X[locs_max]
+
+    return (pks_max, locs_max)
+
+
+def local_peaks(x):
+    if all(x < 1e-5):
+        x = np.zeros((1, len(x)))
+
+    m = len(x) - 1
+
+    # Calculates the extrema of the projected signal
+    # Difference between subsequent elements:
+    dy = np.diff(x.transpose()).transpose()
+    a = np.where(dy != 0)[0]
+    lm = np.where(np.diff(a) != 1)[0] + 1
+    d = a[lm] - a[lm - 1]
+    a[lm] = a[lm] - np.floor(d / 2)
+    a = np.insert(a, len(a), m)
+    ya = x[a]
+
+    if len(ya) > 1:
+        # Maxima
+        pks_max, loc_max = peaks(ya)
+        # Minima
+        pks_min, loc_min = peaks(-ya)
+
+        if len(pks_min) > 0:
+            indmin = a[loc_min]
+        else:
+            indmin = np.asarray([])
+
+        if len(pks_max) > 0:
+            indmax = a[loc_max]
+        else:
+            indmax = np.asarray([])
+    else:
+        indmin = np.array([])
+        indmax = np.array([])
+
+    return (indmin, indmax)
+
+
+# defines new extrema points to extend the interpolations at the edges of the signal (mainly mirror symmetry)
 def boundary_conditions(indmin, indmax, t, x, z, nbsym):
     lx = len(x) - 1
     end_max = len(indmax) - 1
@@ -222,91 +336,6 @@ def envelope_mean(m, t, seq, ndir, N, N_dim):  # new
     return (env_mean, nem, nzm, amp)
 
 
-# Stopping criterion
-def stop(m, t, sd, sd2, tol, seq, ndir, N, N_dim):
-    try:
-        env_mean, nem, nzm, amp = envelope_mean(m, t, seq, ndir, N, N_dim)
-        sx = np.sqrt(np.sum(env_mean ** 2, axis=1))
-
-        if np.all(amp):  # Check if all elements of amp are non-zero
-            sx /= amp  # Element-wise division
-
-        mean_sx_gt_sd = np.mean(sx > sd)
-        any_sx_gt_sd2 = np.any(sx > sd2)
-        any_nem_gt_2 = np.any(nem > 2)
-
-        stp = not ((mean_sx_gt_sd > tol or any_sx_gt_sd2) and any_nem_gt_2)
-    except:
-        env_mean = np.zeros((N, N_dim))
-        stp = 1
-
-    return stp, env_mean
-
-
-def fix(m, t, seq, ndir, stp_cnt, counter, N, N_dim):
-    try:
-        env_mean, nem, nzm, amp = envelope_mean(m, t, seq, ndir, N, N_dim)
-
-        # Use numpy operations for vectorized comparison
-        if np.all(np.abs(nzm - nem) > 1):
-            stp = 0
-            counter = 0
-        else:
-            counter += 1
-            stp = counter >= stp_cnt
-    except:
-        env_mean = np.zeros((N, N_dim))
-        stp = 1
-
-    return stp, env_mean, counter
-
-
-def peaks(X):
-    dX = np.sign(np.diff(X.transpose())).transpose()
-    locs_max = np.where(np.logical_and(dX[:-1] > 0, dX[1:] < 0))[0] + 1
-    pks_max = X[locs_max]
-
-    return (pks_max, locs_max)
-
-
-def local_peaks(x):
-    if all(x < 1e-5):
-        x = np.zeros((1, len(x)))
-
-    m = len(x) - 1
-
-    # Calculates the extrema of the projected signal
-    # Difference between subsequent elements:
-    dy = np.diff(x.transpose()).transpose()
-    a = np.where(dy != 0)[0]
-    lm = np.where(np.diff(a) != 1)[0] + 1
-    d = a[lm] - a[lm - 1]
-    a[lm] = a[lm] - np.floor(d / 2)
-    a = np.insert(a, len(a), m)
-    ya = x[a]
-
-    if len(ya) > 1:
-        # Maxima
-        pks_max, loc_max = peaks(ya)
-        # Minima
-        pks_min, loc_min = peaks(-ya)
-
-        if len(pks_min) > 0:
-            indmin = a[loc_min]
-        else:
-            indmin = np.asarray([])
-
-        if len(pks_max) > 0:
-            indmax = a[loc_max]
-        else:
-            indmax = np.asarray([])
-    else:
-        indmin = np.array([])
-        indmax = np.array([])
-
-    return (indmin, indmax)
-
-
 def stop_emd(r, seq, ndir, N_dim):
     ner = np.zeros((ndir, 1))
     dir_vec = np.zeros((N_dim, 1))
@@ -351,31 +380,4 @@ def stop_emd(r, seq, ndir, N_dim):
     # Stops if the all projected signals have less than 3 extrema
     stp = all(ner < 3)
 
-    return (stp)
-
-
-def nth_prime(nth):  # Calculate and return the first nth primes.
-    if nth > 0:
-        if nth <= 5:    # call corner cases
-            return small_primes(nth)
-        else:
-            return large_primes(nth)    # call general cases
-    else:
-        raise ValueError("n must be >= 1 for list of n prime numbers")
-
-
-def small_primes(nth):      # corner cases for nth prime estimation using log
-    list_prime = np.array([2, 3, 5, 7, 11])
-    return list_prime[:nth]
-
-
-def large_primes(nth):
-    # https://stackoverflow.com/questions/2068372/fastest-way-to-list-all-primes-below-n/3035188#3035188
-    lim = int(nth * (np.log(nth) + np.log(np.log(nth)))) + 1
-    sieve = np.ones(lim // 3 + (lim % 6 == 2), dtype=bool)
-    for i in range(1, int(lim ** 0.5) // 3 + 1):
-        if sieve[i]:
-            k = 3 * i + 1 | 1
-            sieve[k * k // 3::2 * k] = False
-            sieve[k * (k - 2 * (i & 1) + 4) // 3::2 * k] = False
-    return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
+    return stp
