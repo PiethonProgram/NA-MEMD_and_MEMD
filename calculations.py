@@ -106,12 +106,12 @@ def e_diff(prev_imf, curr_imf, t, seq, ndir, N, N_dim, threshold):  # stopping c
         prev_e = np.sum(np.abs(prev_imf) ** 2)
         curr_e = np.sum(np.abs(curr_imf) ** 2)
         difference = np.abs(curr_e - prev_e)
-        stop_sift = difference < threshold
+        stp = difference < threshold
     except:
         env_mean = np.zeros((N, N_dim))
-        stop_sift = True
+        stp = 1
 
-    return stop_sift, env_mean
+    return stp, env_mean
 
 
 def zero_crossings(x):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -137,24 +137,24 @@ def zero_crossings(x):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return izc_detect
 
 
-def local_peaks(x):
-    def peaks(X):
-        dX = np.sign(np.diff(X.transpose())).transpose()
+def local_peaks(signal):     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    def peaks(signal):
+        dX = np.sign(np.diff(signal.transpose())).transpose()
         locs_max = np.where((dX[:-1] > 0) & (dX[1:] < 0))[0] + 1
-        pks_max = X[locs_max]
+        pks_max = signal[locs_max]
 
         return pks_max, locs_max
-    if np.all(x < 1e-5):
-        x = np.zeros((1, len(x)))
+    if np.all(signal < 1e-5):
+        x = np.zeros((1, len(signal)))
 
-    m = len(x) - 1
-    dy = np.diff(x.transpose()).transpose()
+    m = len(signal) - 1
+    dy = np.diff(signal.transpose()).transpose()
     a = np.where(dy != 0)[0]
     lm = np.where(np.diff(a) != 1)[0] + 1
     d = a[lm] - a[lm - 1]
     a[lm] -= - np.floor(d / 2).astype(int)
     a = np.append(a, m)
-    ya = x[a]
+    ya = signal[a]
 
     if len(ya) > 1:
         pks_max, loc_max = peaks(ya)
@@ -178,11 +178,9 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
     indmax = indmax.astype(int)
 
     if len(indmin) + len(indmax) < 3:
-        mode = 0
-        tmin = tmax = zmin = zmax = None
-        return (tmin, tmax, zmin, zmax, mode)
-    else:
-        mode = 1  # the projected signal has inadequate extrema
+        return None, None, None, None, 0
+    mode = 1  # the projected signal has inadequate extrema
+    lsym, rsym = 0, lx
     # boundary conditions for interpolations :
     if indmax[0] < indmin[0]:
         if x[0] > x[indmin[0]]:
@@ -228,13 +226,10 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
             rmin = np.concatenate((np.array([lx]), np.flipud(indmin[max(end_min - nbsym + 2, 0):])))
             rsym = lx
 
-    tlmin = 2 * t[lsym] - t[lmin]
-    tlmax = 2 * t[lsym] - t[lmax]
-    trmin = 2 * t[rsym] - t[rmin]
-    trmax = 2 * t[rsym] - t[rmax]
+    tlmin, tlmax = 2 * t[lsym] - t[lmin], 2 * t[lsym] - t[lmax]
+    trmin, trmax = 2 * t[rsym] - t[rmin], 2 * t[rsym] - t[rmax]
 
-    # in case symmetrized parts do not extend enough
-    if tlmin[0] > t[0] or tlmax[0] > t[0]:
+    if tlmin[0] > t[0] or tlmax[0] > t[0]:    # in case symmetrized parts do not extend enough
         if lsym == indmax[0]:
             lmax = np.flipud(indmax[:min(end_max + 1, nbsym)])
         else:
@@ -256,15 +251,10 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
         trmin = 2 * t[rsym] - t[rmin]
         trmax = 2 * t[rsym] - t[rmax]
 
-    zlmax = z[lmax, :]
-    zlmin = z[lmin, :]
-    zrmax = z[rmax, :]
-    zrmin = z[rmin, :]
-
-    tmin = np.hstack((tlmin, t[indmin], trmin))
-    tmax = np.hstack((tlmax, t[indmax], trmax))
-    zmin = np.vstack((zlmin, z[indmin, :], zrmin))
-    zmax = np.vstack((zlmax, z[indmax, :], zrmax))
+    zlmin, zlmax = z[lmin, :], z[lmax, :]
+    zrmin, zrmax = z[rmin, :], z[rmax, :]
+    tmin, tmax = np.hstack((tlmin, t[indmin], trmin)), np.hstack((tlmax, t[indmax], trmax))
+    zmin, zmax = np.vstack((zlmin, z[indmin, :], zrmin)), np.vstack((zlmax, z[indmax, :], zrmax))
 
     return (tmin, tmax, zmin, zmax, mode)
 
@@ -279,33 +269,23 @@ def envelope_mean(m, t, seq, ndir, N, N_dim):  # new
     amp = np.zeros((len(t)))
     nem = np.zeros((ndir))
     nzm = np.zeros((ndir))
-
     dir_vec = np.zeros((N_dim, 1))
-    for it in range(0, ndir):
-        if N_dim != 3:  # Multivariate signal (for N_dim ~=3) with hammersley sequence
-            # Linear normalisation of hammersley sequence in the range of -1.00 - 1.00
-            b = 2 * seq[it, :] - 1
 
+    for it in range(ndir):
+        if N_dim != 3:  # Multivariate signal (for N_dim ~=3) with hammersley sequence
+            b = 2 * seq[it, :] - 1  # Linear normalisation of hammersley [-1,1]
             # Find angles corresponding to the normalised sequence
-            tht = np.arctan2(np.sqrt(np.flipud(np.cumsum(b[:0:-1] ** 2))) \
-                             , b[:N_dim - 1]).transpose()
+            tht = np.arctan2(np.sqrt(np.cumsum(b[:0:-1][::-1] ** 2))[::-1], b[:N_dim - 1])
 
             # Find coordinates of unit direction vectors on n-sphere
-            dir_vec[:, 0] = np.cumprod(np.concatenate(([1], np.sin(tht))))
-            dir_vec[:N_dim - 1, 0] = np.cos(tht) * dir_vec[:N_dim - 1, 0]
+            dir_vec[:N_dim - 1, 0] = np.cos(tht) * np.cumprod(np.concatenate(([1], np.sin(tht)[:-1])))
+            dir_vec[-1, 0] = np.prod(np.sin(tht))
 
         else:  # Trivariate signal with hammersley sequence
-            # Linear normalisation of hammersley sequence in the range of -1.0 - 1.0
-            tt = 2 * seq[it, 0] - 1
-            if tt > 1:
-                tt = 1
-            elif tt < -1:
-                tt = -1
-
-                # Normalize angle from 0 - 2*pi
-            phirad = seq[it, 1] * 2 * pi
-            st = sqrt(1.0 - tt * tt)
-
+            tt = 2 * seq[it, 0] - 1  # Linear normalisation of hammersley [-1,1]
+            tt = np.clip(tt, -1, 1)
+            phirad = seq[it, 1] * 2 * pi  # Normalize angle from 0 - 2*pi
+            st = sqrt(1.0 - tt ** 2)
             dir_vec[0] = st * cos(phirad)
             dir_vec[1] = st * sin(phirad)
             dir_vec[2] = tt
@@ -349,44 +329,29 @@ def stop_emd(r, seq, ndir, N_dim):
     ner = np.zeros((ndir, 1))
     dir_vec = np.zeros((N_dim, 1))
 
-    for it in range(0, ndir):
+    for it in range(ndir):
         if N_dim != 3:  # Multivariate signal (for N_dim ~=3) with hammersley sequence
-            # Linear normalisation of hammersley sequence in the range of -1.00 - 1.00
-            b = 2 * seq[it, :] - 1
-
+            b = 2 * seq[it, :] - 1  # Linear normalisation of hammersley [-1,1]
             # Find angles corresponding to the normalised sequence
-            tht = np.arctan2(np.sqrt(np.flipud(np.cumsum(b[:0:-1] ** 2))) \
-                             , b[:N_dim - 1]).transpose()
+            tht = np.arctan2(np.sqrt(np.cumsum(b[:0:-1][::-1] ** 2))[::-1], b[:N_dim - 1])
 
             # Find coordinates of unit direction vectors on n-sphere
-            dir_vec[:, 0] = np.cumprod(np.concatenate(([1], np.sin(tht))))
-            dir_vec[:N_dim - 1, 0] = np.cos(tht) * dir_vec[:N_dim - 1, 0]
+            dir_vec[:N_dim - 1, 0] = np.cos(tht) * np.cumprod(np.concatenate(([1], np.sin(tht)[:-1])))
+            dir_vec[-1, 0] = np.prod(np.sin(tht))
 
         else:  # Trivariate signal with hammersley sequence
-            # Linear normalisation of hammersley sequence in the range of -1.0 - 1.0
-            tt = 2 * seq[it, 0] - 1
-            if tt > 1:
-                tt = 1
-            elif tt < -1:
-                tt = -1
-
-                # Normalize angle from 0 - 2*pi
-            phirad = seq[it, 1] * 2 * pi
-            st = sqrt(1.0 - tt * tt)
-
+            tt = 2 * seq[it, 0] - 1     # Linear normalisation of hammersley [-1,1]
+            tt = np.clip(tt, -1, 1)
+            phirad = seq[it, 1] * 2 * pi  # Normalize angle from 0 - 2*pi
+            st = sqrt(1.0 - tt ** 2)
             dir_vec[0] = st * cos(phirad)
             dir_vec[1] = st * sin(phirad)
             dir_vec[2] = tt
-        # Projection of input signal on nth (out of total ndir) direction
-        # vectors
+
         y = np.dot(r, dir_vec)
-
-        # Calculates the extrema of the projected signal
-        indmin, indmax = local_peaks(y)
-
+        indmin, indmax = local_peaks(y)     # Calculates the extrema of the projected signal
         ner[it] = len(indmin) + len(indmax)
 
-    # Stops if the all projected signals have less than 3 extrema
-    stp = all(ner < 3)
+    stp = all(ner < 3)    # Stops if the all projected signals have less than 3 extrema
 
     return stp
