@@ -181,7 +181,8 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
         return None, None, None, None, 0
     mode = 1  # the projected signal has inadequate extrema
     lsym, rsym = 0, lx
-    if indmax[0] < indmin[0]:    # boundary conditions for interpolations :
+    # boundary conditions for interpolations :
+    if indmax[0] < indmin[0]:
         if x[0] > x[indmin[0]]:
             lmax = np.flipud(indmax[1:min(end_max + 1, nbsym + 1)])
             lmin = np.flipud(indmin[:min(end_min + 1, nbsym)])
@@ -259,7 +260,7 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
 
 
 # computes the mean of the envelopes and the mode amplitude estimate
-def envelope_mean(m, t, seq, ndir, N, N_dim, li_mode=False):
+def envelope_mean(m, t, seq, ndir, N, N_dim):  # new
 
     NBSYM = 2
     count = 0
@@ -304,19 +305,14 @@ def envelope_mean(m, t, seq, ndir, N, N_dim, li_mode=False):
         # Calculate multidimensional envelopes using spline interpolation
         # Only done if number of extrema of the projected signal exceed 3
         if mode:
-            if li_mode:
-                fmin = interp1d(tmin, zmin, kind='linear', fill_value="extrapolate")
-                fmax = interp1d(tmax, zmax, kind='linear', fill_value="extrapolate")
-            else:
-                fmin = CubicSpline(tmin, zmin, bc_type='not-a-knot')
-                fmax = CubicSpline(tmax, zmax, bc_type='not-a-knot')
-
+            fmin = CubicSpline(tmin, zmin, bc_type='not-a-knot')
             env_min = fmin(t)
+            fmax = CubicSpline(tmax, zmax, bc_type='not-a-knot')
             env_max = fmax(t)
-            amp += np.sqrt(np.sum((env_max - env_min) ** 2, axis=1)) / 2
-            env_mean += (env_max + env_min) / 2
-        else:
-            count += 1
+            amp = amp + np.sqrt(np.sum(np.power(env_max - env_min, 2), axis=1)) / 2
+            env_mean = env_mean + (env_max + env_min) / 2
+        else:  # if the projected signal has inadequate extrema
+            count = count + 1
 
     if ndir > count:
         env_mean = env_mean / (ndir - count)

@@ -1,5 +1,6 @@
-from noise import *
+from noise import add_noise
 from calculations import *
+from visualization import viz
 
 
 def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2, n_imf=None,
@@ -97,13 +98,10 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
         n_imf += 1
         r = r - m
         nbit = 0
-        prev_imf = m  # Update prev_imf after extracting the IMF
+        # prev_imf = m  # Update prev_imf after extracting the IMF
 
     imfs.append(r.T)
     return np.asarray(imfs)
-
-
-
 
 
 if __name__ == "__main__":
