@@ -7,7 +7,7 @@ def viz(imfs, num_samples=None):
     if num_samples is None or num_samples > num_data_points:
         num_samples = num_data_points
 
-    fig, axes = plt.subplots(num_channels, num_imfs, figsize=(2 * num_imfs, 3 * num_channels), constrained_layout=True)
+    fig, axes = plt.subplots(num_channels, num_imfs, figsize=(5 * num_imfs, 3 * num_channels), constrained_layout=True)
     fig.suptitle("Channel IMFs", fontsize=20)
 
     for channel_index in range(num_channels):
@@ -21,5 +21,4 @@ def viz(imfs, num_samples=None):
             ax.set_xlim(0, num_samples)
             ax.grid(True)
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()

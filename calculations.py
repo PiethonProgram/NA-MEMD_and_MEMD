@@ -261,7 +261,6 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
 
 # computes the mean of the envelopes and the mode amplitude estimate
 def envelope_mean(m, t, seq, ndir, N, N_dim):  # new
-
     NBSYM = 2
     count = 0
 
@@ -330,6 +329,7 @@ def stop_emd(r, seq, ndir, N_dim):
     dir_vec = np.zeros((N_dim, 1))
 
     for it in range(ndir):
+
         if N_dim != 3:  # Multivariate signal (for N_dim ~=3) with hammersley sequence
             b = 2 * seq[it, :] - 1  # Linear normalisation of hammersley [-1,1]
             # Find angles corresponding to the normalised sequence
