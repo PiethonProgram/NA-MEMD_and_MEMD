@@ -5,7 +5,7 @@ import sys
 from numba import jit
 
 
-def nth_prime(nth):  # Calculate and return the first nth primes.
+def nth_prime(nth):
     if nth > 0:
         if nth <= 5:    # call corner cases
             return small_primes(nth)
@@ -22,7 +22,7 @@ def small_primes(nth):      # corner cases for nth prime estimation using log
     return list_prime[:nth]
 
 
-def large_primes(nth):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def large_primes(nth):
     # https://stackoverflow.com/questions/2068372/fastest-way-to-list-all-primes-below-n/3035188#3035188
     lim = int(nth * (np.log(nth) + np.log(np.log(nth)))) + 1
     sieve = np.ones(lim // 3 + (lim % 6 == 2), dtype=bool)
@@ -35,7 +35,7 @@ def large_primes(nth):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
 
-def hamm(n, base):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def hamm(n, base):
     sequence = np.zeros(n)
     if base > 1:    # generate initial seed and calculate inverse
         seed = np.arange(1, n + 1)
@@ -94,8 +94,7 @@ def fix(m, t, seq, ndir, stp_cnt, counter, N, N_dim):   # Stopping criterion bas
     return stp, env_mean, counter
 
 
-# threshold of residual criterion
-def res_thresh(signal, threshold):
+def res_thresh(signal, threshold):  # threshold of residual criterion
     residual_energy = np.sum(signal ** 2)
     return residual_energy < threshold
 
@@ -114,7 +113,7 @@ def e_diff(prev_imf, curr_imf, t, seq, ndir, N, N_dim, threshold):  # stopping c
     return stp, env_mean
 
 
-def zero_crossings(x):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def zero_crossings(x):
     izc_detect = np.where(x[:-1] * x[1:] < 0)[0]    # zero-crossing detection
 
     if len(izc_detect) == 0:  # early exit if no zero-crossings found
@@ -137,13 +136,12 @@ def zero_crossings(x):  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     return izc_detect
 
 
-def local_peaks(signal):     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def local_peaks(signal):
     def peaks(signal):
         dX = np.sign(np.diff(signal.transpose())).transpose()
         locs_max = np.where((dX[:-1] > 0) & (dX[1:] < 0))[0] + 1
-        pks_max = signal[locs_max]
+        return signal[locs_max], locs_max
 
-        return pks_max, locs_max
     if np.all(signal < 1e-5):
         x = np.zeros((1, len(signal)))
 
@@ -275,14 +273,14 @@ def envelope_mean(m, t, seq, ndir, N, N_dim):  # new
             b = 2 * seq[it, :] - 1  # Linear normalisation of hammersley [-1,1]
             # Find angles corresponding to the normalised sequence
             tht = np.arctan2(np.sqrt(np.cumsum(b[:0:-1][::-1] ** 2))[::-1], b[:N_dim - 1])
-
             # Find coordinates of unit direction vectors on n-sphere
             dir_vec[:N_dim - 1, 0] = np.cos(tht) * np.cumprod(np.concatenate(([1], np.sin(tht)[:-1])))
             dir_vec[-1, 0] = np.prod(np.sin(tht))
 
         else:  # Trivariate signal with hammersley sequence
-            tt = 2 * seq[it, 0] - 1  # Linear normalisation of hammersley [-1,1]
-            tt = np.clip(tt, -1, 1)
+            # tt = 2 * seq[it, 0] - 1  # Linear normalisation of hammersley [-1,1]
+            # tt = np.clip(tt, -1, 1)
+            tt = np.clip(2 * seq[it, 0] - 1, -1, 1)
             phirad = seq[it, 1] * 2 * pi  # Normalize angle from 0 - 2*pi
             st = sqrt(1.0 - tt ** 2)
             dir_vec[0] = st * cos(phirad)
@@ -308,19 +306,21 @@ def envelope_mean(m, t, seq, ndir, N, N_dim):  # new
             env_min = fmin(t)
             fmax = CubicSpline(tmax, zmax, bc_type='not-a-knot')
             env_max = fmax(t)
-            amp = amp + np.sqrt(np.sum(np.power(env_max - env_min, 2), axis=1)) / 2
-            env_mean = env_mean + (env_max + env_min) / 2
+            amp = amp + np.sqrt(np.sum((env_max - env_min)**2, axis=1)) / 2
+            env_mean += (env_max + env_min) / 2
         else:  # if the projected signal has inadequate extrema
-            count = count + 1
+            count += 1
 
     if ndir > count:
-        env_mean = env_mean / (ndir - count)
-        amp = amp / (ndir - count)
+        env_mean /= (ndir - count)
+        amp /= (ndir - count)
     else:
         env_mean = np.zeros((N, N_dim))
         amp = np.zeros((N))
         nem = np.zeros((ndir))
-
+        # env_mean.fill(0)
+        # amp.fill(0)
+        # nem.fill(0)
     return (env_mean, nem, nzm, amp)
 
 
