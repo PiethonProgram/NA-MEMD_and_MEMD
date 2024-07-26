@@ -1,7 +1,6 @@
 import numpy as np
 
 
-# Available methods : na_fix, na_snr, na_var, na_ran
 def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
     """ Add noise to signals
     Parameters :
@@ -55,6 +54,7 @@ def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
         ran_noise = rand_factor * intensity * noise
         output = np.vstack((signal, ran_noise))
         return output
+
     elif method == 'w_gauss':
         wgn_noise = noise * intensity
         output = np.vstack((signal, wgn_noise))

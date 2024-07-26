@@ -1,7 +1,6 @@
 from NA_MEMD import *
 import time
 
-
 signal = np.random.randn(10, 1000)
 st = time.time()
 imfs = memd(signal)
@@ -16,4 +15,6 @@ print(imfs.shape)
 #   - linear interpolation (interp1d) option
 #   - speed-up using numba
 #   - general speedup of programs
+#   - Alternative EMD options
+#   -
 
