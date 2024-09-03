@@ -20,13 +20,15 @@ def main():
         np.cos(2 * np.pi * 0.5 * t) + 0.3 * np.random.randn(1000),
         np.sin(2 * np.pi * 0.1 * t) + 0.2 * np.random.randn(1000)
     ])
+
+    #Visualize generated signal
     vis_signal(signal)
 
     # Example 1: Perform NA-MEMD on the signal
     imfs_na_memd = na_memd(signal, n_dir=64, stop_crit='stop', intensity=0.1, method='na_fix')
 
     # Example 2: Perform standard MEMD on the signal
-    imfs_memd = memd(signal, n_dir=64, stop_crit='fix_h', n_iter=3)
+    imfs_memd = memd(signal, n_dir=64, stop_crit='stop')
 
     # Example 3: Visualize the results using the visualization function
     viz(imfs_na_memd, num_samples=signal.shape[1])
