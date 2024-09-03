@@ -5,9 +5,10 @@ from visualization import viz
 
 def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2, n_imf=None,
             method='memd', intensity=0.1, add_rchannel=None):
+
     new_signals = add_noise(signal, method=method, intensity=intensity, add_rchannel=add_rchannel)
     imfs = memd(new_signals, n_dir, stop_crit, stop_vect)
-    imfs = imfs.transpose(1, 0, 2)
+
     return imfs
 
 
@@ -101,7 +102,8 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
         # prev_imf = m  # Update prev_imf after extracting the IMF
 
     imfs.append(r.T)
-    return np.asarray(imfs)
+    return np.asarray(imfs).transpose(1, 0, 2)
+
 
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
     if method == 'memd':
         return signal
 
-    elif method == 'na_fix':
+    elif method in {'na_fix', 'w_gauss'}:
         fix_noise = noise * intensity
         output = np.vstack((signal, fix_noise))
         return output
@@ -50,14 +50,9 @@ def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
         return output
 
     elif method == 'na_ran':
-        rand_factor = np.random.rand(1, sample_count)
+        rand_factor = np.random.rand(add_rchannel, sample_count)
         ran_noise = rand_factor * intensity * noise
         output = np.vstack((signal, ran_noise))
-        return output
-
-    elif method == 'w_gauss':
-        wgn_noise = noise * intensity
-        output = np.vstack((signal, wgn_noise))
         return output
 
     else:
