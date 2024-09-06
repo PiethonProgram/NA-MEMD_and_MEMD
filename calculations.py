@@ -2,7 +2,6 @@ import numpy as np
 from scipy.interpolate import interp1d, CubicSpline
 from math import pi, sqrt, sin, cos
 import sys
-from numba import jit
 
 
 def nth_prime(nth):
@@ -114,12 +113,13 @@ def e_diff(prev_imf, curr_imf, t, seq, ndir, N, N_dim, threshold):  # stopping c
 
 
 def zero_crossings(x):
-    izc_detect = np.where(x[:-1] * x[1:] < 0)[0]    # zero-crossing detection
+    izc_detect = np.where(np.diff(np.sign(x)))[0]
 
-    if len(izc_detect) == 0:  # early exit if no zero-crossings found
-        return izc_detect
+    if len(izc_detect) == 0:  # early exit if no zero crossing found
+        return None
 
     exact_zeros = np.where(x == 0)[0]   # find and store exact zeros
+
     if len(exact_zeros) > 0:        # Check for consecutive zeros
         if np.any(np.diff(exact_zeros) == 1):   # consecutive zeros
             zero_array = (x == 0).astype(int)
@@ -177,8 +177,10 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
 
     if len(indmin) + len(indmax) < 3:
         return None, None, None, None, 0
+
     mode = 1  # the projected signal has inadequate extrema
     lsym, rsym = 0, lx
+
     # boundary conditions for interpolations :
     if indmax[0] < indmin[0]:
         if x[0] > x[indmin[0]]:
@@ -198,8 +200,8 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
             lsym = indmin[0]
 
         else:
-            lmax = np.concatenate((np.flipud(indmax[:min(end_max + 1, nbsym - 1)]), ([0])))
             lmin = np.flipud(indmin[:min(end_min + 1, nbsym)])
+            lmax = np.concatenate((np.flipud(indmax[:min(end_max + 1, nbsym - 1)]), ([0])))
             lsym = 0
 
     if indmax[-1] < indmin[-1]:
@@ -209,8 +211,8 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
             rsym = indmin[-1]
 
         else:
-            rmax = np.concatenate((np.array([lx]), np.flipud(indmax[max(end_max - nbsym + 2, 0):])))
             rmin = np.flipud(indmin[max(end_min - nbsym + 1, 0):])
+            rmax = np.concatenate((np.array([lx]), np.flipud(indmax[max(end_max - nbsym + 2, 0):])))
             rsym = lx
 
     else:
@@ -232,8 +234,9 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
             lmax = np.flipud(indmax[:min(end_max + 1, nbsym)])
         else:
             lmin = np.flipud(indmin[:min(end_min + 1, nbsym)])
-        if lsym == 1:
-            sys.exit('bug')
+
+        sys.exit('bug') if lsym == 1 else None
+
         lsym = 0
         tlmin = 2 * t[lsym] - t[lmin]
         tlmax = 2 * t[lsym] - t[lmax]
@@ -243,8 +246,9 @@ def boundary_conditions(indmin, indmax, t, x, z, nbsym):
             rmax = np.flipud(indmax[max(end_max - nbsym + 1, 0):])
         else:
             rmin = np.flipud(indmin[max(end_min - nbsym + 1, 0):])
-        if rsym == lx:
-            sys.exit('bug')
+
+        sys.exit('bug') if rsym == lx else None
+
         rsym = lx
         trmin = 2 * t[rsym] - t[rmin]
         trmax = 2 * t[rsym] - t[rmax]

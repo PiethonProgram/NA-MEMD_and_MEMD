@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
+def add_noise(signal, na_method='na_fix', intensity=0.1, add_rchannel=None):
     """ Add noise to signals
     Parameters :
 
@@ -29,27 +29,27 @@ def add_noise(signal, method='na_fix', intensity=0.1, add_rchannel=None):
 
     noise = np.random.randn(add_rchannel, sample_count)
 
-    if method == 'memd':
+    if na_method == 'memd':
         return signal
 
-    elif method in {'na_fix', 'w_gauss'}:
+    elif na_method in {'na_fix', 'w_gauss'}:
         fix_noise = noise * intensity
         output = np.vstack((signal, fix_noise))
         return output
 
-    elif method == 'na_snr':
+    elif na_method == 'na_snr':
         sig_power = np.sum(np.abs(signal) ** 2)/sample_count
         noise_add = noise * np.sqrt(sig_power/(10**(intensity/10)))
         output = np.vstack((signal, noise_add))
         return output
 
-    elif method == 'na_var':
+    elif na_method == 'na_var':
         var_noise = np.var(a=signal, axis=1, keepdims=True)
         var_noise = noise * var_noise * intensity
         output = np.vstack((signal, var_noise))
         return output
 
-    elif method == 'na_ran':
+    elif na_method == 'na_ran':
         rand_factor = np.random.rand(add_rchannel, sample_count)
         ran_noise = rand_factor * intensity * noise
         output = np.vstack((signal, ran_noise))

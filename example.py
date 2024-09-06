@@ -25,7 +25,7 @@ def main():
     vis_signal(signal)
 
     # Example 1: Perform NA-MEMD on the signal
-    imfs_na_memd = na_memd(signal, n_dir=64, stop_crit='stop', intensity=0.1, method='na_fix')
+    imfs_na_memd = na_memd(signal, n_dir=64, stop_crit='stop', intensity=0.1, na_method='na_fix')
 
     # Example 2: Perform standard MEMD on the signal
     imfs_memd = memd(signal, n_dir=64, stop_crit='stop')

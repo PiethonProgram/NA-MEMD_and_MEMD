@@ -4,11 +4,12 @@ from visualization import viz
 
 
 def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2, n_imf=None,
-            method='memd', intensity=0.1, add_rchannel=None):
+            na_method='memd', intensity=0.1, add_rchannel=None, output_condition=True):
 
-    new_signals = add_noise(signal, method=method, intensity=intensity, add_rchannel=add_rchannel)
+    new_signals = add_noise(signal, na_method=na_method, intensity=intensity, add_rchannel=add_rchannel)
     imfs = memd(new_signals, n_dir, stop_crit, stop_vect)
-
+    if output_condition:
+        imfs = imfs[signal.shape[0]::]
     return imfs
 
 
@@ -25,6 +26,7 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
     if N_dim < 3:
         sys.exit('Function only processes the signal having more than 3 channels.')
     N = signal.shape[0]
+
     if not isinstance(n_dir, int) or n_dir < 6:
         sys.exit('invalid num_dir. num_dir should be an integer greater than or equal to 6.')
     if not isinstance(stop_crit, str) or (stop_crit not in ['stop', 'fix_h', 'e_diff']):
@@ -34,6 +36,7 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
         sys.exit('invalid stop_vector. stop_vector should be a list with three elements e.g. default is [0.75,0.75,0.75]')
     if stop_crit == 'fix_h' and (not isinstance(n_iter, int) or n_iter < 0):
         sys.exit('invalid stop_count. stop_count should be a nonnegative integer.')
+
     base = [-n_dir]
 
     if N_dim == 3:
@@ -75,9 +78,9 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
 
         if np.max(np.abs(m)) < 1e-10 * np.max(np.abs(signal)):
             if not stop_sift:
-                print('emd:warning : forced stop of EMD : too small amplitude')
+                print('emd:warning : forced stop of EMD : amplitude too small')
             else:
-                print('forced stop of EMD : too small amplitude')
+                print('forced stop of EMD : amplitude too small')
             break
 
         while not stop_sift and nbit < MAXITERATIONS:
