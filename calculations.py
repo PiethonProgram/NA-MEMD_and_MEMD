@@ -68,7 +68,7 @@ def stop(mode, t_array, sd, sd2, tol, seq, ndir, N, N_dim):     # Stop criterion
 
     except:     # return default values on exception
         env_mean = np.zeros((N, N_dim))
-        stp = 1
+        stp = True
 
     return stp, env_mean
 
@@ -88,14 +88,9 @@ def fix(m, t, seq, ndir, stp_cnt, counter, N, N_dim):   # Stopping criterion bas
 
     except:     # return default values
         env_mean = np.zeros((N, N_dim))
-        stp = 1
+        stp = True
 
     return stp, env_mean, counter
-
-
-def res_thresh(signal, threshold):  # threshold of residual criterion
-    residual_energy = np.sum(signal ** 2)
-    return residual_energy < threshold
 
 
 def e_diff(prev_imf, curr_imf, t, seq, ndir, N, N_dim, threshold):  # stopping criterion based on energy difference
@@ -104,10 +99,18 @@ def e_diff(prev_imf, curr_imf, t, seq, ndir, N, N_dim, threshold):  # stopping c
         prev_e = np.sum(np.abs(prev_imf) ** 2)
         curr_e = np.sum(np.abs(curr_imf) ** 2)
         difference = np.abs(curr_e - prev_e)
-        stp = difference < threshold
-    except:
+
+        if prev_e > 0:
+            relative_diff = difference / prev_e
+        else:
+            relative_diff = difference
+
+        stp = relative_diff < threshold
+
+    except Exception as e:
+        print(f"Error during e_diff computation: {e}")
         env_mean = np.zeros((N, N_dim))
-        stp = 1
+        stp = True
 
     return stp, env_mean
 

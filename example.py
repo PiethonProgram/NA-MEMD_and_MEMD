@@ -1,10 +1,11 @@
 from NA_MEMD import *
 
 # Future Updates
-#   - Energy Criterion
-#   - linear interpolation (interp1d) option
-#   - speed-up using numba
-#   - potentially create GUI for easy user usability
+#   - Energy Threshold Criterion (currently not working)
+#   - fix_h Threshold Criterion (currently not working)
+#   - linear interpolation (interp1d) option (currently not implemented)
+#   - speed-up using numba (currently not implemented)
+#   - potentially create GUI for easy user usability (planning phase)
 
 
 def main():

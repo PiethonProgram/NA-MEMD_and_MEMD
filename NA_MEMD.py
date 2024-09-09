@@ -1,22 +1,29 @@
 from noise import add_noise
 from calculations import *
-from visualization import viz
+from visualization import *
 
 
-def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2, n_imf=None,
-            na_method='memd', intensity=0.1, add_rchannel=None, output_condition=True):
+def validate_namemd_input(na_method, intensity, add_rchannel):
 
-    new_signals = add_noise(signal, na_method=na_method, intensity=intensity, add_rchannel=add_rchannel)
-    imfs = memd(new_signals, n_dir, stop_crit, stop_vect)
-    if output_condition:
-        imfs = imfs[signal.shape[0]::]
-    return imfs
+    if not isinstance(na_method, str):
+        sys.exit("Invalid method")
+
+    if not isinstance(intensity, (int, float)) or intensity <= 0:
+        sys.exit("Intensity must be a positive number.")
+
+    if add_rchannel is None:
+        pass
+    else:
+        if not isinstance(add_rchannel, int) or add_rchannel <= 0:
+            sys.exit("add_rchannel must be a positive integer")
+
+    return True
 
 
-def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_iter=2, max_imf=100, e_thresh=1e-3):
+def validate_memd_input(signal, n_dir, stop_crit, stop_vec, n_iter, max_imf, e_thresh):
 
     if len(signal) == 0:
-        sys.exit('emptyDataSet. Data set cannot be empty.')
+        sys.exit('empty dataset. No Data found')
 
     if signal.shape[0] < signal.shape[1]:
         signal = signal.T
@@ -33,9 +40,31 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
         sys.exit('invalid stop_criteria. stop_criteria should be either fix_h, stop or e_diff')
     if not isinstance(stop_vec, (list, tuple, np.ndarray)) or any(
             x for x in stop_vec if not isinstance(x, (int, float, complex))):
-        sys.exit('invalid stop_vector. stop_vector should be a list with three elements e.g. default is [0.75,0.75,0.75]')
+        sys.exit(
+            'invalid stop_vector. stop_vector should be a list with three elements e.g. default is [0.75,0.75,0.75]')
     if stop_crit == 'fix_h' and (not isinstance(n_iter, int) or n_iter < 0):
         sys.exit('invalid stop_count. stop_count should be a nonnegative integer.')
+
+    return signal, n_dir, stop_crit, stop_vec, n_iter, max_imf, e_thresh, N_dim, N
+
+
+def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2,
+            na_method='na_fix', intensity=0.1, add_rchannel=None, output_condition=False):
+
+    if not validate_namemd_input(na_method, intensity, add_rchannel) :
+        sys.exit("Error in Input")
+    new_signals = add_noise(signal, na_method=na_method, intensity=intensity, add_rchannel=add_rchannel)
+    imfs = memd(new_signals, n_dir, stop_crit, stop_vect, n_iter)
+    if not output_condition:    # display how many imfs
+        imfs = imfs[signal.shape[0]::]
+
+    return imfs
+
+
+def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_iter=2, max_imf=100, e_thresh=1e-3):
+
+    signal, n_dir, stop_crit, stop_vec, n_iter, max_imf, e_thresh, N_dim,  N = (
+        validate_memd_input(signal, n_dir, stop_crit, stop_vec, n_iter, max_imf, e_thresh))
 
     base = [-n_dir]
 
@@ -70,11 +99,13 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
         elif stop_crit == 'fix_h':
             counter = 0
             stop_sift, env_mean, counter = fix(m, t, seq, n_dir, stp_cnt, counter, N, N_dim)
-        # elif stop_crit == 'e_diff':     # doesn't work properly, dealing with first imf initialization
-        #     if prev_imf is not None:
-        #         stop_sift, env_mean = e_diff(prev_imf, m, t, seq, n_dir, N, N_dim, e_thresh)
-        #     else:
-        #         stop_sift, env_mean = stop(m, t, sd, sd2, tol, seq, n_dir, N, N_dim)
+        elif stop_crit == 'e_diff':
+            # If there is a previous IMF, calculate the energy difference
+            if prev_imf is not None:
+                stop_sift, env_mean = e_diff(prev_imf, m, t, seq, n_dir, N, N_dim, e_thresh)
+            else:
+                # For the first IMF, use a regular stopping criterion
+                stop_sift, env_mean = stop(m, t, sd, sd2, tol, seq, n_dir, N, N_dim)
 
         if np.max(np.abs(m)) < 1e-10 * np.max(np.abs(signal)):
             if not stop_sift:
@@ -89,11 +120,11 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
                 stop_sift, env_mean = stop(m, t, sd, sd2, tol, seq, n_dir, N, N_dim)
             elif stop_crit == 'fix_h':
                 stop_sift, env_mean, counter = fix(m, t, seq, n_dir, stp_cnt, counter, N, N_dim)
-            # elif stop_crit == 'e_diff':
-            #     if prev_imf is not None:
-            #         stop_sift, env_mean = e_diff(prev_imf, m, t, seq, n_dir, N, N_dim, e_thresh)
-            #     else:
-            #         stop_sift, env_mean = stop(m, t, sd, sd2, tol, seq, n_dir, N, N_dim)
+            elif stop_crit == 'e_diff':
+                if prev_imf is not None:
+                    stop_sift, env_mean = e_diff(prev_imf, m, t, seq, n_dir, N, N_dim, e_thresh)
+                else:
+                    stop_sift, env_mean = stop(m, t, sd, sd2, tol, seq, n_dir, N, N_dim)
             nbit += 1
             if nbit == (MAXITERATIONS - 1) and nbit > 100:
                 print('emd:warning : forced stop of sifting : too many iterations')
@@ -105,9 +136,6 @@ def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_it
         # prev_imf = m  # Update prev_imf after extracting the IMF
 
     imfs.append(r.T)
+
     return np.asarray(imfs).transpose(1, 0, 2)
 
-
-
-if __name__ == "__main__":
-    pass

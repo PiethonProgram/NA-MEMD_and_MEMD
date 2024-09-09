@@ -56,5 +56,5 @@ def add_noise(signal, na_method='na_fix', intensity=0.1, add_rchannel=None):
         return output
 
     else:
-        raise ValueError('\nInvalid method. \n'
-                         'Available na_methods: na_fix, na_snr, na_var, na_ran, memd, w_gauss')
+        raise ValueError('Invalid method.'
+                         ' Available na_methods: na_fix, na_snr, na_var, na_ran, memd, w_gauss')
