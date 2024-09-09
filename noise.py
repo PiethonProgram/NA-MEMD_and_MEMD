@@ -7,7 +7,7 @@ def add_noise(signal, na_method='na_fix', intensity=0.1, add_rchannel=None):
 
     - signal (ndarray): signal input consisting of r rows and c columns where each row represents an input channel
                         and each column represents sample data.
-    - method (str) : method of noise to apply to signal.
+    - na_method (str) : method of noise to apply to signal.
         memd : memd implementation (do nothing)
         na_fix : fixed noise
         na_snr : signal-to-noise ratio
@@ -57,4 +57,4 @@ def add_noise(signal, na_method='na_fix', intensity=0.1, add_rchannel=None):
 
     else:
         raise ValueError('\nInvalid method. \n'
-                         'Available methods: na_fix, na_snr, na_var, na_ran, memd, w_gauss')
+                         'Available na_methods: na_fix, na_snr, na_var, na_ran, memd, w_gauss')
