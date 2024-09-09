@@ -4,7 +4,6 @@ import numpy as np
 
 def vis_imfs(imfs, num_samples=500):
     num_channels, num_imfs, num_data_points = imfs.shape
-    print(num_channels, num_imfs, num_data_points)
 
     if num_samples is None or num_samples > num_data_points:
         num_samples = num_data_points

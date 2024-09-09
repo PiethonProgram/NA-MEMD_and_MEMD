@@ -1,14 +1,11 @@
 from NA_MEMD import *
-from visualization import viz, vis_signal
 
 # Future Updates
-#   - Energy Criterion, Residual Criterion
+#   - Energy Criterion
 #   - linear interpolation (interp1d) option
 #   - speed-up using numba
-#   - general speedup of programs
-#   - Alternative EMD options
-#   - improve visualizations
 #   - potentially create GUI for easy user usability
+
 
 def main():
 
@@ -18,24 +15,24 @@ def main():
     signal = np.array([
         np.sin(2 * np.pi * 1.5 * t) + 0.5 * np.random.randn(1000),
         np.cos(2 * np.pi * 0.5 * t) + 0.3 * np.random.randn(1000),
-        np.sin(2 * np.pi * 0.1 * t) + 0.2 * np.random.randn(1000)
+        np.sin(2 * np.pi * 0.1 * t) + 0.2 * np.random.randn(1000),
+        np.cos(2 * np.pi * 0.5 * t) + 0.5 * np.random.randn(1000),
+        np.cos(2 * np.pi * 0.5 * t) + 0.8 * np.random.randn(1000)
+
     ])
 
-    #Visualize generated signal
+    # Visualize generated signal
     vis_signal(signal)
 
     # Example 1: Perform NA-MEMD on the signal
-    imfs_na_memd = na_memd(signal, n_dir=64, stop_crit='stop', intensity=0.1, na_method='na_fix')
+    imfs_na_memd = na_memd(signal)
 
     # Example 2: Perform standard MEMD on the signal
-    imfs_memd = memd(signal, n_dir=64, stop_crit='stop')
+    imfs_memd = memd(signal)
 
     # Example 3: Visualize the results using the visualization function
-    viz(imfs_na_memd, num_samples=signal.shape[1])
-    viz(imfs_memd, num_samples=signal.shape[1])
-
-
-    #vis_signal(add_noise(signal, method='na_var'))
+    vis_imfs(imfs_na_memd)
+    vis_imfs(imfs_memd)
 
 
 if __name__ == "__main__":

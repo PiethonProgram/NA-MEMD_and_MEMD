@@ -116,7 +116,7 @@ def zero_crossings(x):
     izc_detect = np.where(np.diff(np.sign(x)))[0]
 
     if len(izc_detect) == 0:  # early exit if no zero crossing found
-        return None
+        return izc_detect
 
     exact_zeros = np.where(x == 0)[0]   # find and store exact zeros
 
