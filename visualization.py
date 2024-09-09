@@ -1,12 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def viz(imfs, num_samples=500):
+
+def vis_imfs(imfs, num_samples=500):
     num_channels, num_imfs, num_data_points = imfs.shape
     print(num_channels, num_imfs, num_data_points)
 
     if num_samples is None or num_samples > num_data_points:
         num_samples = num_data_points
+
+    plt.rcParams.update({'font.size': 12, 'font.family': 'serif'})
 
     fig, axes = plt.subplots(num_channels, num_imfs, figsize=(5 * num_imfs, 3 * num_channels), constrained_layout=True)
     fig.suptitle("Channel IMFs", fontsize=20)
@@ -15,14 +18,21 @@ def viz(imfs, num_samples=500):
         for i in range(num_imfs):
             ax = axes[channel_index, i] if num_imfs > 1 else axes[channel_index]
             ax.plot(imfs[channel_index, i, :num_samples])
-            if i == 0:
-                ax.set_ylabel(f'Channel {channel_index + 1}')
-            if channel_index == 0:
-                ax.set_title(f'IMF {i + 1}' if i < (num_imfs - 1) else 'Residual')
-            ax.set_xlim(0, num_samples)
-            ax.grid(True)
 
+            ax.set_ylabel(f'IMF {i+1} Amplitude', fontsize=10)
+
+            if i == 0:
+                ax.set_ylabel(f'Channel {channel_index + 1}\nIMF {i + 1} Amplitude', fontsize=10)
+
+            if channel_index == 0:
+                ax.set_title(f'IMF {i + 1}' if i < (num_imfs - 1) else 'Residual', fontsize=12)
+            ax.set_xlim(0, num_samples)
+            ax.set_xlabel('Samples', fontsize=10)  # Add x-axis label
+            ax.grid(True, linestyle='--', alpha=0.6)
+
+    plt.tight_layout(pad=2.0)
     plt.show()
+
 
 def vis_signal(signal):
     fig, ax = plt.subplots(figsize=(10, 6))
