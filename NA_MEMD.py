@@ -45,23 +45,26 @@ def validate_memd_input(signal, n_dir, stop_crit, stop_vec, n_iter, max_imf, e_t
     if stop_crit == 'fix_h' and (not isinstance(n_iter, int) or n_iter < 0):
         sys.exit('invalid stop_count. stop_count should be a nonnegative integer.')
 
+    if not isinstance(max_imf, int) or max_imf < 1:
+        sys.exit('invalid max_imf. max_imf should be a positive integer')
+
     return signal, n_dir, stop_crit, stop_vec, n_iter, max_imf, e_thresh, N_dim, N
 
 
-def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2,
+def na_memd(signal, n_dir=50, stop_crit='stop', stop_vect=(0.075, 0.75, 0.075), n_iter=2, max_imf=100, e_thresh=1e-3,
             na_method='na_fix', intensity=0.1, add_rchannel=None, output_condition=False):
 
     if not validate_namemd_input(na_method, intensity, add_rchannel) :
         sys.exit("Error in Input")
     new_signals = add_noise(signal, na_method=na_method, intensity=intensity, add_rchannel=add_rchannel)
-    imfs = memd(new_signals, n_dir, stop_crit, stop_vect, n_iter)
+    imfs = memd(new_signals, n_dir, stop_crit, stop_vect, n_iter, max_imf, e_thresh)
     if not output_condition:    # display how many imfs
         imfs = imfs[signal.shape[0]::]
 
     return imfs
 
 
-def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.075, 0.75, 0.075), n_iter=2, max_imf=100, e_thresh=1e-3):
+def memd(signal, n_dir=50, stop_crit='stop', stop_vec=(0.05, 0.5, 0.05), n_iter=3, max_imf=100, e_thresh=1e-3):
 
     signal, n_dir, stop_crit, stop_vec, n_iter, max_imf, e_thresh, N_dim,  N = (
         validate_memd_input(signal, n_dir, stop_crit, stop_vec, n_iter, max_imf, e_thresh))
